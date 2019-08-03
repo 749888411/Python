@@ -1,19 +1,14 @@
 #!/usr/bin/python
 # encoding: utf-8
 # -*- coding: utf8 -*-
-"""
-Created by PyCharm.
-File:               LinuxBashShellScriptForOps:getFileLastLine.py
-User:               hejun
-Create Date:        2019/8/3
-Create Time:        11:05
- """
+
 import os
+import datetime
 
 def get_file_last_line(inputfile):
     filesize = os.path.getsize(inputfile)
     blocksize = 1024
-    with open(inputfile, 'r') as f:
+    with open(inputfile, mode='r', encoding='utf8') as f:
         last_line = ""
         if filesize > blocksize:
             maxseekpoint = (filesize // blocksize)
@@ -24,12 +19,38 @@ def get_file_last_line(inputfile):
         if lines:
             lineno = 1
             while last_line == "":
-                last_line = lines[-lineno].strip()[-11:].replace("\r|\n|", " ")
+                last_line = lines[-lineno].strip()[40:50].replace("\r|\n|", "")
                 lineno += 1
+        f.close()
         return last_line
 
-data = os.path.dirname(os.path.abspath(__file__))
-inputfile = os.path.join(data, 'data.txt')
-print(inputfile)
-print(get_file_last_line(inputfile))
+def write_file_to_last_line(inputfile,job_starttime,job_finishtime,finish_date):
+    with open(inputfile, mode='a', encoding='utf8') as f:
+        job_starttime =str(job_starttime)
+        job_finishtime = str(job_finishtime)
+        finish_date = str(finish_date)
+        f.writelines(job_starttime+" "+job_finishtime+" "+finish_date+"\n")
+        f.close()
+
+# 获取前1天或N天的日期，beforeOfDay=1：前1天；beforeOfDay=N：前N天
+def getdate(beforeOfDay):
+    today = datetime.datetime.now()
+    # 计算偏移量
+    offset = datetime.timedelta(days=-beforeOfDay)
+    # 获取想要的日期的时间
+    re_date = (today + offset).strftime('%Y-%m-%d %H:%M:%S')
+    return re_date
+
+if __name__ == '__main__':
+    data = os.path.dirname(os.path.abspath(__file__))
+    inputfile = os.path.join(data, 'data.txt')
+    # print(inputfile)
+    print(get_file_last_line(inputfile))
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    yesterday = getdate(1)
+    qiantian = getdate(2)
+    # print(today)
+    # print(yesterday)
+    # print(qiantian)
+    write_file_to_last_line(inputfile, yesterday, qiantian, today)
 
