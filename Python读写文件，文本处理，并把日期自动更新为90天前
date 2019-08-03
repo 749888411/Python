@@ -1,0 +1,69 @@
+# Python
+Mark下。今天任务中有一部分是对生成的文本进行处理，生成需要的格式，以方便下一步导入数据库。
+
+需求
+原始文本格式如下：
+
+
+
+生成的文档格式应为：取app或者input开头的行。把日期相同的app和input放在一行，并把日期提前90天。 
+生成格式如下图所示：
+
+
+
+代码
+直接上文本处理的小程序了，程序里有注释
+
+import sys
+import datetime
+import time
+
+file = open("sql_20170503.txt") # 输入文件
+outputfile = open("temp.txt",'a') # 输出文件
+line = file.readline()
+app_map = {} # 首字段为"app"的
+input_map = {} # 首字段为"input"的
+
+# 按行读写
+while line:
+    lineSplit = line.split("\t")  # 拆分字段
+    print line,
+    line = file.readline()
+    print "-----------",lineSplit[0]+"\t"+lineSplit[1]+"\t"+lineSplit[2]+"\t"+lineSplit[3],
+
+    # 日期修改为前90天
+    dt = lineSplit[1]
+    myday = datetime.datetime(int(dt[0:4]), int(dt[4:6]), int(dt[6:8])) + datetime.timedelta(days=-90)
+    dt = myday.strftime('%Y%m%d')
+    lineSplit[1] = str(dt)
+
+    # 以日期为键，其余为值
+    if lineSplit[0] == "app":
+        app_map[lineSplit[1]] = lineSplit[0] + "\t" + lineSplit[2] + "\t" + lineSplit[3]
+        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"+app_map[lineSplit[1]];
+    elif lineSplit[0] == "input":
+        input_map[lineSplit[1]] = lineSplit[0] + "\t" + lineSplit[2] + "\t" + lineSplit[3]
+
+file.close()
+
+merge_map = {} # 字段联结
+for input_key, input_value in input_map.items():
+    if input_key in app_map.keys():
+        merge_map[input_key] = input_value[0:-1] + "\t" +  app_map[input_key]
+    else:
+        print input_key + "************************************************************************************************"
+#       merge_map[input_key] = input_value[0:-1] + "\t" + "app" + "\t" + "0" + "\t" + "0" + "\n"
+
+# 按格式输出
+for merge_key, merge_value in merge_map.items():
+    merge = merge_key + "\t" + merge_value
+    outputfile.write(merge)
+    print merge_key + "\t" + merge_value,
+
+outputfile.close()
+
+--------------------- 
+作者：孙琨 
+来源：CSDN 
+原文：https://blog.csdn.net/sunkun2013/article/details/71173271 
+版权声明：本文为博主原创文章，转载请附上博文链接！
