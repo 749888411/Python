@@ -1,0 +1,16 @@
+#!/usr/bin/python
+# -*- coding: utf8 -*-
+
+
+def export_result(num):
+    if None != num or "" != num:
+        if len(str(num)) > 3:
+            num_x, num_y = str(num).split('.')
+            num = float(num_x + '.' + num_y[0:3])
+            return num
+        else:
+            return num
+    return
+
+
+print(export_result(0.1236665))
