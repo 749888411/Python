@@ -1,0 +1,41 @@
+1. 异常的捕获
+
+try:
+    num=int(input("提示用户输入一个整数"))
+    result=10/num
+except Exception as error:
+    print("有异常输出%s",error)
+else:
+    print("没有异常输出")
+    print(result)
+finally:
+    print("程序执行结束")
+
+例子：
+str1 = 'hello world'
+try:
+    int(str1)
+except IndexError as e:
+    print(e)
+except KeyError as e:
+    print(e)
+except ValueError as e:
+    print(e)
+else:
+    print('try内没有异常')
+finally:
+    print('无论异常与否,都会执行我')
+
+2. 异常的传递
+
+def Demo1():
+    return int(input("提示用户输入一个整数"))
+ 
+def demo2():
+    return Demo1()
+ 
+#利用异常传递性，在主程序捕获调用程序的异常
+try:
+    print(demo2())
+except Exception as error:
+    print(error)
