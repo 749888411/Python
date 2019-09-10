@@ -1,3 +1,5 @@
+1. 采用字符串切割的方式进行处理（推荐使用）
+
 #!/usr/bin/python
 # -*- coding: utf8 -*-
 
@@ -14,3 +16,63 @@ def export_result(num):
 
 
 print(export_result(0.1236665))
+
+2. 其他方式：
+
+（1） %
+例如：result为一个list，为result中每个值保留小数点后4位。 
+
+result = [("%.4f" % i) for i in result]
+
+Python 3.X对于浮点数默认提供17位数字的精度。
+
+关于单精度和双精度：
+单精度型float
+双精度型double。在Turbo C中，
+单精度型占4个字节（32位）内存空间，其数值范围为3.4E-38～3.4E+38，只能提供七位有效数字。
+双精度型占8 个字节（64位）内存空间，其数值范围为1.7E-308～1.7E+308，可提供16位有效数字。
+
+（2）format
+"{0:.2f}".format(12345.67890)
+result: '12345.68'
+
+（3） 函数 round ceil floor
+a. round(num,x)
+如果只有一个数作为参数round(num)，返回一个最靠近的整数。如果出现.5，两边的距离都一样，round()取偶数。
+round(3.245)
+3
+round(3.545)
+4
+如果有两位参数，则第二位为位数控制，如果最后一位是5，那么倒数第二位是奇数：舍弃，是偶数：进一。
+
+>>> round(3.235, 2)#5前是3，5舍弃
+3.23
+>>> round(3.245, 2)#5前面是4，4进一=5
+3.25
+
+b. math模块的ceil(x)
+取大于等于x的最小整数。
+
+c. math模块的floor(x)
+取小于等于x的最大整数。
+
+（4）numpy
+可以通过 np.set_printoptions 函数实现打印出来的位数控制。
+
+参数： 
+precision 控制输出精度， 
+linewidth 控制输出宽度。 
+e.g 
+np.set_printoptions(linewidth=90)
+
+（5）Pandas
+控制台打印时显示的2位小数：
+
+pd.set_option('precision', 2) 
+
+或者整体
+
+df.round(2)
+————————————————
+版权声明：本文为CSDN博主「鎏风」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/super_little_newbie/article/details/84639411
