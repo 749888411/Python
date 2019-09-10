@@ -1,0 +1,6 @@
+
+# 计算耗时
+time_start = time.time()
+time_end = time.time()
+time_cost = str(round((time_end - time_start), ndigits=2))
+print('time_cost:', time_cost + 's')
