@@ -76,3 +76,27 @@ df.round(2)
 ————————————————
 版权声明：本文为CSDN博主「鎏风」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
 原文链接：https://blog.csdn.net/super_little_newbie/article/details/84639411
+
+(6) 保留N位有效数字的脚本
+
+#! /usr/bin/env python 
+# -*- coding:utf-8 -*-
+# @File    : test7.py
+# @Author  : HWX763490
+# @Time    : 2019/9/20 11:56
+# @Desc    : 保留N位有效数字
+
+
+def format(f, n):
+    flag = 0
+    s = str(f)
+    for i in s:
+        if (i == '.'):
+            n -= 1
+        if (i != '0') & (i != '.'):
+            return float(s[:flag + n + 1])
+        flag += 1
+
+
+f = format(0.0125450, 3)
+print(f)
