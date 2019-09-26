@@ -1,0 +1,196 @@
+Shell脚本导出导入MySQL建表语句
+Shell脚本导出导入MySQL建表语句
+一、导出sql语句
+1、需求：
+2、shell脚本如下：
+二、导入sql语句
+1、需求
+2、shell实现1
+3、shell实现2
+一、导出sql语句
+1、需求：
+1.1、根据数据库表名，把不同的数据库建表语句导入不同的文件夹中，
+1.2、每个表的建表语句生成单个文件
+
+2、shell脚本如下：
+#!/bin/bash
+### 数据库连接，用户名:root, 密码:root
+dbcn='mysql -uroot -proot';  
+
+#### 数据库名
+db=stp_product_service;  
+
+### 获取数据库中表个数
+ct=`$dbcn -N -e " SELECT COUNT(1)  FROM information_schema.TABLES AS t WHERE t.TABLE_SCHEMA = '$db' AND t.TABLE_TYPE = 'BASE TABLE' ; "`;  
+echo '数据库表总数量：'$ct;
+## shell 文件所在目录
+workdir=$(cd $(dirname $0); pwd);
+
+## 创建建表语句存放文件夹
+sqldir=$workdir/createTable;
+mkdir -p $sqldir;
+mkdir -p $sqldir/Bond;
+mkdir -p $sqldir/Fx;
+mkdir -p $sqldir/Irs;
+mkdir -p $sqldir/Sirp;
+mkdir -p $sqldir/BcidTradePlatform;
+mkdir -p $sqldir/BCIDMember;
+mkdir -p $sqldir/Ccmm;
+
+# 遍历数据库中的所有表
+ii=0; 
+while [ $ii -lt $ct ];
+do  
+	p=$ii;  
+	let ii++;  
+	echo '----------------第'$ii'张表------------------';
+	
+	## 获取表名
+	table_name=`$dbcn -N -e " SELECT t.TABLE_NAME FROM information_schema.TABLES AS t  where  t.TABLE_SCHEMA = '$db' AND t.TABLE_TYPE = 'BASE TABLE' limit $p,1;"`;  
+	echo '表名：'$table_name;
+
+	## 获取建表语句
+	table_ddl=`$dbcn $db -N -e "SHOW CREATE TABLE  $table_name ;"`;
+	echo '建表语句：'${table_ddl#*${table_name}};
+	
+	## 根据表名，把建表语句放入指定文件中
+	if [[ $table_name == bond* ]]; then
+		echo -e ${table_ddl#*${table_name}} > $sqldir/Bond/${table_name}_DDL.sql ;
+	elif [[ $table_name == fx* ]]; then
+		echo -e ${table_ddl#*${table_name}} > $sqldir/Fx/${table_name}_DDL.sql ;
+	elif [[ $table_name == irs* ]]; then
+		echo -e ${table_ddl#*${table_name}} > $sqldir/Irs/${table_name}_DDL.sql ;
+	elif [[ $table_name == sirp* ]]; then
+		echo -e ${table_ddl#*${table_name}} > $sqldir/Sirp/${table_name}_DDL.sql ;
+	elif [[ $table_name == bcid_trdpl* ]]; then
+		echo -e ${table_ddl#*${table_name}} > $sqldir/BcidTradePlatform/${table_name}_DDL.sql ;
+	elif [[ $table_name == bcid* ]]; then
+		echo -e ${table_ddl#*${table_name}} > $sqldir/BCIDMember/${table_name}_DDL.sql ;
+	else
+		echo -e ${table_ddl#*${table_name}} > $sqldir/Ccmm/${table_name}_DDL.sql ;
+	fi
+	echo '--------------------------------------------------------------------------------------------';
+done 
+
+echo '数据库建表语句导出完毕!';
+
+二、导入sql语句
+1、需求
+根据前面导出的建表语句，导入新的数据库中
+
+2、shell实现1
+把所有建表语句全部写入同一个临时文件中，一次性执行完毕，文件开头关闭外键约束检查，文件结尾开启外键约束检查
+（因为是临时外键约束，所以每次执行都要关闭或检查，否则每次执行前，临时外键约束都会重置为全局外键约束）
+
+#!/bin/bash
+### 数据库连接，用户名:root, 密码:root
+dbcn='mysql -uroot -proot';  
+
+#### 数据库名 ###############################
+db=stp_test;
+
+mysql_source(){  
+	for file_name in `ls -A $1`  
+	do  
+		if [ -f $1$file_name ];then  
+		    
+			# 建表语句追加到临时文件中
+			cat $1$file_name >> $2;
+			echo -e ";" >> $2;
+			echo a=$1$file_name;
+		fi  
+	done  
+}  
+
+## shell文件所在目录
+workdir=$(cd $(dirname $0); pwd);
+## sql建表文件根目录 ###########################
+sqldir=$workdir/createTable
+
+## 临时文件
+tempfile=$sqldir/temp.sql;
+
+## 建表语句所在的文件夹
+bonddir=$sqldir/Bond/;
+fxdir=$sqldir/Fx/;
+irsdir=$sqldir/Irs/;
+sirpdir=$sqldir/Sirp/;
+bcidTrdplDir=$sqldir/BcidTradePlatform/;
+bcidDir=$sqldir/BCIDMember/;
+ccmmdir=$sqldir/Ccmm/;
+
+## 导入语句前关闭外键约束
+echo -e "SET FOREIGN_KEY_CHECKS=0;" > $tempfile;
+
+## 把所有的建表语句导入到临时文件中
+mysql_source $bonddir $tempfile;
+mysql_source $fxdir $tempfile;
+mysql_source $irsdir $tempfile;
+mysql_source $sirpdir $tempfile;
+mysql_source $bcidTrdplDir $tempfile;
+mysql_source $bcidDir $tempfile;
+mysql_source $ccmmdir $tempfile;
+
+## 导入语句后开启外键约束
+echo -e "SET FOREIGN_KEY_CHECKS=1;" >> $tempfile;
+
+## 执行临时文件中的建表语句
+$dbcn $db -N -e "source $tempfile" ;
+
+## 删除临时文件
+rm $tempfile;
+
+echo 'success';
+
+3、shell实现2
+利用全局外键约束，不必把所有的建表语句放入同一个文件中执行，但是最后不要忘记开启
+
+#!/bin/bash
+### 数据库连接，用户名:root, 密码:root
+dbcn='mysql -uroot -proot';  
+
+#### 数据库名
+db=stp_test;
+
+mysql_source(){  
+	for file_name in `ls -A $1`  
+	do  
+		if [ -f $1$file_name ];then  
+			echo a=$1$file_name;
+			$dbcn $db -N -e "source $1$file_name" ;
+		fi  
+	done  
+}  
+
+## shell文件所在目录
+workdir=$(cd $(dirname $0); pwd);
+sqldir=$workdir/createTable
+
+## 建表语句所在的文件夹
+bonddir=$sqldir/Bond/;
+fxdir=$sqldir/Fx/;
+irsdir=$sqldir/Irs/;
+sirpdir=$sqldir/Sirp/;
+bcidTrdplDir=$sqldir/BcidTradePlatform/;
+bcidDir=$sqldir/BCIDMember/;
+ccmmdir=$sqldir/Ccmm/;
+
+## 导入语句前关闭外键约束检查（全局变量）
+$dbcn $db -N -e "SET GLOBAL FOREIGN_KEY_CHECKS=0;";
+
+mysql_source $bonddir;
+mysql_source $fxdir;
+mysql_source $irsdir;
+mysql_source $sirpdir;
+mysql_source $bcidTrdplDir;
+mysql_source $bcidDir;
+mysql_source $ccmmdir;
+
+## 导出语句前开启外键约束检查（全局变量）
+$dbcn $db -N -e "SET GLOBAL FOREIGN_KEY_CHECKS=1;";
+
+echo 'import success';
+
+————————————————
+版权声明：本文为CSDN博主「歆夜」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/xincsdnye/article/details/88751156
