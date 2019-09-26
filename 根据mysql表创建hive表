@@ -1,0 +1,57 @@
+根据MySQL表创建Hive表脚本
+
+import  pymysql  
+import codecs
+
+  
+def getSingleSQL(table,schema = 'srm',ispartition = False):  
+    # table =  为表名，mysql, hive表名一致 
+    # schema = 为hive中的库名 
+    # ispartition : 是否分区默认为分区 
+
+    create_head = 'CREATE TABLE IF NOT EXISTS {0}.{1}('.format(schema,table) + '\n'
+    create_tail = 'ROW FORMAT DELIMITED FIELDS TERMINATED BY \',\' ; \n\n'
+    connection=pymysql.connect(host='192.168.11.172', port=16408, user='srm', password='handhand', db='srm', charset='utf8')  
+    try:  
+        with connection.cursor(cursor=pymysql.cursors.DictCursor) as cursor:  
+            sql='SHOW FULL FIELDS FROM  {0}'.format(table)  
+            cursor.execute(sql) 
+            try:  
+                for row in cursor: 
+                    if 'bigint' in row['Type']:  
+                        row['Type'] = "bigint"  
+                    elif 'int' in row['Type'] or 'tinyint' in row['Type'] or 'smallint' in row['Type'] or 'mediumint' in row['Type'] or 'integer' in row['Type']:  
+                        row['Type'] = "int"  
+                    elif 'double' in row['Type'] or 'float' in row['Type'] or 'decimal' in row['Type']:  
+                        row['Type'] = "double"  
+                    else:  
+                        row['Type'] = "string"  
+                    create_head += row['Field'] + ' '+ row['Type'] +' comment \'' + row['Comment'] + '\' ,\n'       
+            except:  
+                print('程序异常!')    
+    finally:  
+        connection.close()  
+    singleSQL = create_head[:-2] + '\n' + ')'+ create_tail
+    return singleSQL     
+
+
+
+def getTotalSQL():
+    connection=pymysql.connect(host='192.168.11.172', port=16408, user='srm', password='handhand', db='srm', charset='utf8')
+    try:  
+        with connection.cursor(cursor=pymysql.cursors.DictCursor) as cursor:  
+            sql='SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=\'SRM\' AND TABLE_TYPE=\'BASE TABLE\' ' 
+            cursor.execute(sql)
+            try:
+                for row in cursor:
+                    print(row)
+                    tableName = row['TABLE_NAME']
+                    singleSQL = getSingleSQL(tableName)
+                    f = open('create_hive_table.sql', 'a', encoding='utf-8')
+                    f.write(singleSQL) 
+            except:  
+                print('程序异常了哦!')   
+    finally:  
+        connection.close()  
+
+getTotalSQL()
