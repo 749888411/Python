@@ -1,0 +1,58 @@
+利用shell脚本批量创建数据库以及数据表
+#!/bin/bash
+#批量创建数据库
+user=root
+password=handdba
+socket=/var/lib/mysql/mysql.sock
+mycmd="mysql -u$user -p$password -S $socket"
+for((i=13;i<73;i++))
+do
+$mycmd -e "create database db$i"
+done
+————————————————结束线
+
+在指定的数据库去批量执行某目录下的.sql文件的shell脚本如下：
+#!/bin/bash
+#execute all script in specified directory
+MYDATE=`date +%F'-'%T'-'%w`
+MYSQL_PATH=/u01/scripts #指定的目录
+LOG_FILE=/u01/scripts/exec_${MYDATE}.log
+confirm=
+db_name=
+db_pass=handdba
+for file in ${MYSQL_PATH}/*
+do
+if [ -f "$file" ] ; then
+postfix=`echo $file | awk -F'.' '{print  "."$NF}'`
+  if [ $postfix = ".sql" ] ; then
+     if [ ! $db_name ] ; then #如果没有指定数据库
+        read -p "请输入数据库名：" db_name
+        read -p "你输入的数据名是【$db_name】，确认继续请输入--yes--: " confirm
+     fi
+     if [ "$confirm" = "yes" ] && [ -n $confirm ] ; then
+        if [ ! $db_pass ] ; then #如果没有设置密码
+           stty -echo #密码输入保护关闭显示
+           read -p "请输入数据库密码：" db_pass
+           echo -e "\n"
+           stty echo
+        fi
+        mysql -uroot -p$db_pass -P3306 --default-character-set=utf8 ${db_name} < $file >& error.log
+        echo $file 
+        echo -e "\n===========$file=============\n" >>${LOG_FILE}
+        cat error.log >>${LOG_FILE} #输出执行日志
+        error=`grep ERROR error.log` #读取错误日志信息
+        if [ -n "$error" ] ; then #如果有错误就退出程序
+           echo $error
+           exit
+        fi
+     else
+        echo "您已经取消操作!"
+        exit
+     fi
+  fi
+fi
+done
+————————————————
+版权声明：本文为CSDN博主「徐萝卜、」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/jiaqingShareing/article/details/82148481
+
