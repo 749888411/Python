@@ -1,0 +1,4 @@
+df.write.jdbc(mode="overwrite",
+              url="jdbc:mysql://localhost:3306/spark_db?user=root&password=yyz!123456",
+              table="test_person", 
+              properties={"driver": 'com.mysql.jdbc.Driver'})
